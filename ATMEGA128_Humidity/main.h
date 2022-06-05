@@ -20,3 +20,7 @@
 #define DHT11_PIN   6
 
 extern void LCD_Transmit_Command(char cmd);
+extern void LCD_Cursor(char col, char row);
+extern void LCD_Transmit_Data(char data);
+extern void LCD_Transmit_String(char *str);
+extern void Clear_Buffer(uint8_t line, uint8_t index);

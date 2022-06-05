@@ -5,9 +5,11 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <stdint.h>
+#include <string.h>
 #include "main.h"
 
 uint8_t DHT11_I_RH,DHT11_D_RH,DHT11_I_TEMP,DHT11_D_TEMP,DHT11_CheckSum;
+char tx_data[32];
 
 void Port_Init(void)
 {
@@ -81,10 +83,16 @@ uint8_t Receive_data(void)
 int main(void)
 {
     uint8_t Calc_CheckSum = 0;
+	uint8_t data = 0;
+	uint8_t length = 0;
+	uint8_t n1,n10,n100;
+	char Humidity;
+	char temperature;
 
     Port_Init();
     LCD_Init();
     ISR_Init();
+
     while (1) 
     {
         DHT11_Transmit_Request(); //DHT11 data Transmit Reqeust
@@ -99,40 +107,59 @@ int main(void)
         Calc_CheckSum = DHT11_I_RH + DHT11_D_RH + DHT11_I_TEMP + DHT11_D_TEMP;
         if(Calc_CheckSum == DHT11_CheckSum)
         {
-
+			for(int i = 0; i<16;i++)
+			{
+				Clear_buffer(0,i);
+				LCD_Cursor(0,i);
+				sprintf(&tx_data[0],"Humidity : ");
+				length = strlen(tx_data);
+				n100 = (DHT11_I_RH / 100) % 10;
+				n10 = (DHT11_I_RH / 10) % 10;
+				n1 = (DHT11_I_RH % 10);
+				tx_data[length] = n100;
+				length = length + 1;
+				tx_data[length] = n10;
+				length = length + 1;
+				tx_data[length] = n1;
+				length = length + 1;
+				n10 = (DHT11_D_RH / 10) % 10;
+				n1 = (DHT11_D_RH % 10);
+				tx_data[length] = n10;
+				length = length + 1;
+				tx_data[length] = n1;
+				LCD_Transmit_Data(tx_data[i]);
+			}
+			length = 0;
+			for(int i = 0;<16;i++)
+			{
+				Clear_buffer(0,i+16);
+				LCD_Cursor(1,i);
+				sprintf(tx_data[length],"Temperature : ");
+				length = strlen(tx_data);
+				n100 = (DHT11_I_TEMP / 100) % 10;
+				n10 = (DHT11_I_TEMP / 10) % 10;
+				n1 = (DHT11_I_TEMP % 10);
+				tx_data[length] = n100;
+				length = length + 1;
+				tx_data[length] = n10;
+				length = length + 1;
+				tx_data[length] = n1;
+				length = length + 1;
+				n10 = (DHT11_D_TEMP / 10) % 10;
+				n1 = (DHT11_D_TEMP % 10);
+				tx_data[length] = n10;
+				length = length + 1;
+				tx_data[length] = n1;
+				LCD_Transmit_Data(tx_data[i+16]);
+			}
         }
-        _delay_ms(3000);
+        _delay_ms(1000);
     }
 }
 
-
-// 텍스트 LCD로 부터 상태(명령)를 읽는 함수
-unsigned char LCD_rCommand(void)
+void Clear_Buffer(uint8_t line, uint8_t index)
 {
-	unsigned char temp=1;
-	
-	LCD_DATA_DIR = 0X00;
-	
-	cbi(LCD_CON, LCD_RS); // 0번 비트 클리어, RS = 0, 명령
-	sbi(LCD_CON, LCD_RW); // 1번 비트 설정, RW = 1, 읽기
-	sbi(LCD_CON, LCD_E);  // 2번 비트 설정, E = 1
-	_delay_us(1);
-	
-	temp = LCD_DATA_IN;      // 명령 읽기
-	_delay_us(1);
-	
-	cbi(LCD_CON, LCD_E);  // 명령 읽기 동작 끝
-	
-	LCD_DATA_DIR = 0XFF;
-	_delay_us(1);
-	
-	return temp;
-}
-
-// 텍스트 LCD의 비지 플래그 상태를 확인하는 함수
-char LCD_BusyCheck(unsigned char temp)
-{
-	return temp & 0x80;
+	txdata[line * 16 + index] = ' ';
 }
 
 // 텍스트 LCD에 명령을 출력하는 함수 - 단, 비지플래그 체크하지 않음
@@ -147,30 +174,25 @@ void LCD_Transmit_Command(char cmd)
 	_delay_us(1);
 }
 
-
-void LCD_Cursor(char col, char row)
+void ç(char col, char row)
 {
-	LCD_wBCommand(0x80 | (row + col * 0x40));
+	LCD_Transmit_Command(0x80 | (row + col * 0x40));
 }
 
 
-void LCD_wData(char dat)
+void LCD_Transmit_Data(char data)
 {
-	while(LCD_BusyCheck(LCD_rCommand()))
-	{
-		_delay_us(1);
-	}
 	sbi(LCD_CON, LCD_RS);
 	cbi(LCD_CON, LCD_RW);
 	sbi(LCD_CON, LCD_E);
-	LCD_DATA = dat;
+	LCD_DATA = data;
 	_delay_us(1);
 	cbi(LCD_CON, LCD_E);
 	_delay_us(1);
 }
 
-void LCD_wString(char *str)
+void LCD_Transmit_String(char *str)
 {
 	while(*str)
-	LCD_wData(*str++);
+	LCD_Transmit_Data(*str++);
 }
