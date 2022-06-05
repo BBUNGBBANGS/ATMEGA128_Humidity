@@ -18,6 +18,16 @@ void Port_Init(void)
     DDRD = 0x07; //PD0~2 Output Direction
 }
 
+void Timer1_Init(void)
+{
+    TCCR1A = 0x82;  // FAST PWM Mode
+    TCCR1B = 0x1A; // FAST PWM MODE(10bit)
+    TCNT1H = 0x00;
+    TCNT1L = 0x00;
+    ICR1 = 39999; // 2[MHz] / (1 + 39999) = 50[Hz] -> 20[ms]
+    OCR1A = 3999; // 20[ms] * 0.1 : 2[ms] : Servo Motor 90[Degree]
+}
+
 void ISR_Init(void)
 {
     SREG = 0x80; // Global Interrupt Enable
@@ -109,7 +119,7 @@ int main(void)
         {
 			for(int i = 0; i<16;i++)
 			{
-				Clear_buffer(0,i);
+				Clear_Buffer(0,i);
 				LCD_Cursor(0,i);
 				sprintf(&tx_data[0],"Humidity : ");
 				length = strlen(tx_data);
@@ -130,9 +140,9 @@ int main(void)
 				LCD_Transmit_Data(tx_data[i]);
 			}
 			length = 0;
-			for(int i = 0;<16;i++)
+			for(int i = 0;i<16;i++)
 			{
-				Clear_buffer(0,i+16);
+				Clear_Buffer(1,i);
 				LCD_Cursor(1,i);
 				sprintf(tx_data[length],"Temperature : ");
 				length = strlen(tx_data);
@@ -152,6 +162,15 @@ int main(void)
 				tx_data[length] = n1;
 				LCD_Transmit_Data(tx_data[i+16]);
 			}
+
+            if( DHT11_I_RH >= 40)
+            {
+                OCR1A = 2999; // 20[ms] * 0.075 : 1.5[ms]  ==> Servo Motor 0[Degree]
+            }
+            else
+            {
+                OCR1A = 3999; // 20[ms] * 0.1 : 2[ms] : Servo Motor 90[Degree]
+            }
         }
         _delay_ms(1000);
     }
@@ -159,7 +178,7 @@ int main(void)
 
 void Clear_Buffer(uint8_t line, uint8_t index)
 {
-	txdata[line * 16 + index] = ' ';
+	tx_data[line * 16 + index] = ' ';
 }
 
 // 텍스트 LCD에 명령을 출력하는 함수 - 단, 비지플래그 체크하지 않음
