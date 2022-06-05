@@ -174,7 +174,7 @@ void LCD_Transmit_Command(char cmd)
 	_delay_us(1);
 }
 
-void ç(char col, char row)
+void LCD_Cursor(char col, char row)
 {
 	LCD_Transmit_Command(0x80 | (row + col * 0x40));
 }
