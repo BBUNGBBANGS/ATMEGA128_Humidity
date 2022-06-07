@@ -35,7 +35,11 @@ void Timer1_Init(void)
 void LCD_Init(void)
 {
 	LCD_Transmit_Command(0x38); // Function Set , 2-Line Mode
-	_delay_ms(10);	
+	_delay_ms(1);		
+	LCD_Transmit_Command(0x38); // Function Set , 2-Line Mode
+	_delay_ms(1);	
+	LCD_Transmit_Command(0x38); // Function Set , 2-Line Mode
+	_delay_ms(1);	
 	LCD_Transmit_Command(0x0C); // Display ON
 	_delay_ms(10);
 	LCD_Transmit_Command(0x06); // Increment Mode
@@ -192,12 +196,11 @@ void LCD_Transmit_Command(char cmd)
 {
 	cbi(LCD_CON, LCD_RS); // 0번 비트 클리어, RS = 0, 명령
 	cbi(LCD_CON, LCD_RW); // 1번 비트 클리어, RW = 0, 쓰기
-	_delay_us(10);
 	sbi(LCD_CON, LCD_E);  // 2번 비트 설정, E = 1
+	_delay_us(1);
 	PORTA = cmd;          // 명령 출력
-	_delay_us(10);
 	cbi(LCD_CON, LCD_E);  // 명령 쓰기 동작 끝
-	_delay_us(10);
+	_delay_us(1);
 }
 
 void LCD_Cursor(char col, char row)
@@ -209,10 +212,9 @@ void LCD_Transmit_Data(char data)
 {
 	sbi(LCD_CON, LCD_RS);
 	cbi(LCD_CON, LCD_RW);
-	_delay_us(10);
 	sbi(LCD_CON, LCD_E);
+	_delay_us(1);
 	LCD_DATA = data;
-	_delay_us(10);
 	cbi(LCD_CON, LCD_E);
-	_delay_us(10);
+	_delay_us(1);
 }
